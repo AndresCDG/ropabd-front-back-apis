@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model usuarios {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(100)
+  email      String     @unique @db.VarChar(100)
+  password   String
+  role       String?    @db.VarChar(20)
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  cliente    clientes?
+}
+
+
+model clientes {
+  id         Int       @id @default(autoincrement())
+  usuario_id Int       @unique
+  address    String?
+  phone      String?   @db.VarChar(20)
+  usuarios   usuarios  @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  pedidos    pedidos[]
+}
+
+
+model productos {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(100)
+  description     String?
+  price           Decimal           @db.Decimal(10, 2)
+  stock           Int               @default(0)
+  talla           String?           @db.VarChar(10)
+  color           String?           @db.VarChar(50)
+  categoria       String?           @db.VarChar(50)
+  detalles_pedido detalles_pedido[]
+}
+
+model pedidos {
+  id              Int               @id @default(autoincrement())
+  cliente_id      Int?
+  total           Decimal?          @default(0) @db.Decimal(10, 2)
+  status          String?           @default("pending") @db.VarChar(20)
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  detalles_pedido detalles_pedido[]
+  devoluciones    devoluciones[]
+  cliente         clientes?         @relation(fields: [cliente_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model detalles_pedido {
+  id          Int        @id @default(autoincrement())
+  pedido_id   Int?
+  producto_id Int?
+  cantidad    Int
+  subtotal    Decimal    @db.Decimal(10, 2)
+  pedido      pedidos?   @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  producto    productos? @relation(fields: [producto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model devoluciones {
+  id         Int       @id @default(autoincrement())
+  pedido_id  Int?
+  reason     String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  pedidos    pedidos?  @relation(fields: [pedido_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
